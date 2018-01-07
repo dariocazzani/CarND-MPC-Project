@@ -98,77 +98,102 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          vector<double> waypoints_x;
-          vector<double> waypoints_y;
 
-          // transform waypoints to be from car's perspective
-          // this means we can consider px = 0, py = 0, and psi = 0
-          // greatly simplifying future calculations
-          for (size_t i = 0; i < ptsx.size(); i++) {
-            double dx = ptsx[i] - px;
-            double dy = ptsy[i] - py;
-            waypoints_x.push_back(dx * cos(-psi) - dy * sin(-psi));
-            waypoints_y.push_back(dx * sin(-psi) + dy * cos(-psi));
+          /*
+          * First: convert to the vehicle coordinate system
+          */
+          const int num_waypoints = ptsx.size();
+          const double cospsi = cos(-psi);
+          const double sinpsi = sin(-psi);
+
+          vector<double> x_veh;
+          vector<double> y_veh;
+
+          for(int i = 0; i < num_waypoints; i++) {
+            const double dx = ptsx[i] - px;
+            const double dy = ptsy[i] - py;
+            x_veh.push_back(dx * cospsi - dy * sinpsi);
+            y_veh.push_back(dy * cospsi + dx * sinpsi);
           }
 
-          double* ptrx = &waypoints_x[0];
-          double* ptry = &waypoints_y[0];
-          Eigen::Map<Eigen::VectorXd> waypoints_x_eig(ptrx, 6);
-          Eigen::Map<Eigen::VectorXd> waypoints_y_eig(ptry, 6);
 
-          auto coeffs = polyfit(waypoints_x_eig, waypoints_y_eig, 3);
+          /*
+          * Second: convert the waypoint from std::vector to Eigen::Vector
+          * reference: https://stackoverflow.com/a/39157864/8760547
+          */
+          double* pointer_x = &x_veh[0];
+          double* pointer_y = &y_veh[0];
+          Eigen::Map<Eigen::VectorXd> x_veh_eig(pointer_x, num_waypoints);
+          Eigen::Map<Eigen::VectorXd> y_veh_eig(pointer_y, num_waypoints);
+
+          /*
+          * Third: Fit a 3rd degree polynomial and calculate CTE and ePSI
+          */
+          auto coeffs = polyfit(x_veh_eig, y_veh_eig, 3);
           double cte = polyeval(coeffs, 0);  // px = 0, py = 0
           double epsi = -atan(coeffs[1]);  // p
 
-          double steer_value = j[1]["steering_angle"];
-          double throttle_value = j[1]["throttle"];
+          double steering_angle = j[1]["steering_angle"];
+          double throttle = j[1]["throttle"];
+          double v_ms = v * 0.447; // convert speed from mph to m/s
 
-          Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
-          auto vars = mpc.Solve(state, coeffs);
-          steer_value = vars[0];
-          throttle_value = vars[1];
+          /*
+          * Fourth: Use the kinematic model to predict the vehicle state
+          */
+          const double dt = DT;
+          const double Lf = LF;
 
-          json msgJson;
+          const double px_act = v_ms * dt;
+          const double py_act = 0;
+          const double psi_act = - v_ms * steering_angle * dt / Lf;
+          const double v_act = v_ms + throttle * dt;
+          const double cte_act = cte + v_ms * sin(epsi) * dt;
+          const double epsi_act = epsi + psi_act;
+          Eigen::VectorXd state(num_waypoints);
+          state << px_act, py_act, psi_act, v_act, cte_act, epsi_act;
+          vector<double> mpc_output = mpc.Solve(state, coeffs);
+
+          double steer_value = mpc_output[0]/ deg2rad(25); // convert to [-1..1] range
+          double throttle_value = mpc_output[1];
+
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = -steer_value/(deg2rad(25));
+          json msgJson;
+          //NB: Note the sign before steer_value as suggested in the Tips and Tricks
+          msgJson["steering_angle"] = -steer_value;
           msgJson["throttle"] = throttle_value;
 
-          //Display the MPC predicted trajectory
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Green line
-
-          for (size_t i = 2; i < vars.size(); i ++) {
-            if (i%2 == 0) {
-              mpc_x_vals.push_back(vars[i]);
-            }
-            else {
-              mpc_y_vals.push_back(vars[i]);
-            }
+          /*
+          * Fifth: Display the MPC predicted trajectory
+          * .. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
+          * the points in the simulator are connected by a Green line
+          */
+          vector<double> x_pred_traj;
+          vector<double> y_pred_traj;
+          // NB: the first 2 elements are the actuators values, then x and y alternate
+          for (size_t i = 2; i < mpc_output.size(); i+=2)
+          {
+              x_pred_traj.push_back(mpc_output[i]);
+              y_pred_traj.push_back(mpc_output[i+1]);
           }
 
-          msgJson["mpc_x"] = mpc_x_vals;
-          msgJson["mpc_y"] = mpc_y_vals;
+          msgJson["mpc_x"] = x_pred_traj;
+          msgJson["mpc_y"] = y_pred_traj;
 
-          //Display the waypoints/reference line
+          /*
+          * Sixth: Display the waypoints/reference line
+          */
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Yellow line
-
-          for (double i = 0; i < 100; i += 3){
-            next_x_vals.push_back(i);
-            next_y_vals.push_back(polyeval(coeffs, i));
+          for (int i = 1; i < num_waypoints; i++)
+          {
+            next_x_vals.push_back(x_veh[i]);
+            next_y_vals.push_back(y_veh[i]);
           }
-
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;

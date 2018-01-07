@@ -6,6 +6,11 @@
 
 using namespace std;
 
+#define DT 0.1;
+#define TIMESTEPS 15;
+#define LF 2.67;
+#define REF_VELOCITY 75.0;
+
 class MPC {
  public:
   MPC();

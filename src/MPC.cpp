@@ -6,24 +6,15 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 10;
-double dt = 0.1;
+// NB: check the MPC.h source file
+size_t N = TIMESTEPS;
+double dt = DT;
 
-// This value assumes the model presented in the classroom is used.
-//
-// It was obtained by measuring the radius formed by running the vehicle in the
-// simulator around in a circle with a constant steering angle and velocity on a
-// flat terrain.
-//
-// Lf was tuned until the the radius formed by the simulating the model
-// presented in the classroom matched the previous radius.
-//
 // This is the length from front to CoG that has a similar radius.
-const double Lf = 2.67;
+const double Lf = LF;
 
 // Both the reference cross track and orientation errors are 0.
-// The reference velocity is set to 40 mph.
-double ref_v = 70;
+double ref_v = REF_VELOCITY;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -40,6 +31,16 @@ size_t a_start = delta_start + N - 1;
 size_t t = 0;
 size_t i = 0;
 
+// NB: This is where the tuning was difficult: finding the right values
+//     for each weight
+double const CTE_COST_MULTIPLIER =                50.f;
+double const EPSI_COST_MULTIPLIER =               50.f;
+double const SPEED_COST_MULTIPLIER =              1.f;
+double const STEER_COST_MULTIPLIER =              20000.f;
+double const ACCELERATION_COST_MULTIPLIER =       0.05f;
+double const STEER_DIFF_COST_MULTIPLIER =         500.f;
+double const ACCELERATION_DIFF_COST_MULTIPLIER =  1.f;
+
 class FG_eval {
  public:
   // Fitted polynomial coefficients
@@ -55,12 +56,6 @@ class FG_eval {
     // the Solver function below.
     fg[0] = 0;
 
-    // NB: This is where the tuning was difficult: finding the right values
-    //     for the each variable in the cost
-
-    double const CTE_COST_MULTIPLIER =    3000.f;
-    double const EPSI_COST_MULTIPLIER =   3000.f;
-    double const SPEED_COST_MULTIPLIER =  1.f;
     for (t = 0; t < N; t++) {
       fg[0] += CTE_COST_MULTIPLIER * CppAD::pow(vars[cte_start + t], 2);
       fg[0] += EPSI_COST_MULTIPLIER * CppAD::pow(vars[epsi_start + t], 2);
@@ -68,17 +63,16 @@ class FG_eval {
     }
 
     // Minimize the use of actuators.
-    double const STEER_COST_MULTIPLIER =        5.f;
-    double const ACCELERATION_COST_MULTIPLIER = 5.f;
     for (t = 0; t < N - 1; t++) {
       fg[0] += STEER_COST_MULTIPLIER * CppAD::pow(vars[delta_start + t], 2);
       fg[0] += ACCELERATION_COST_MULTIPLIER * CppAD::pow(vars[a_start + t], 2);
-      fg[0] += 700*CppAD::pow(vars[delta_start + t] * vars[v_start+t], 2);
+      // Try to
+      // as suggested here: https://discussions.udacity.com/t/mpc-cost-paramter-tuning-question/354670/6
+      // It seems to help to slow down at curves
+      fg[0] += 1500*CppAD::pow(vars[delta_start + t] * vars[v_start+t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
-    double const STEER_DIFF_COST_MULTIPLIER =        200.f;
-    double const ACCELERATION_DIFF_COST_MULTIPLIER = 10.f;
     for (t = 0; t < N - 2; t++) {
       fg[0] += STEER_DIFF_COST_MULTIPLIER *
               CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
@@ -280,23 +274,17 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // TODO: Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
-  //
-  // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-  // creates a 2 element double vector.
-  // return {solution.x[x_start + 1],   solution.x[y_start + 1],
-  //         solution.x[psi_start + 1], solution.x[v_start + 1],
-  //         solution.x[cte_start + 1], solution.x[epsi_start + 1],
-  //         solution.x[delta_start],   solution.x[a_start]};
 
-  vector<double> result;
+  vector<double> output = {};
 
-  result.push_back(solution.x[delta_start]);
-  result.push_back(solution.x[a_start]);
+  output.push_back(solution.x[delta_start]);
+  output.push_back(solution.x[a_start]);
 
-  for (i = 0; i < N-1; i++) {
-    result.push_back(solution.x[x_start + i + 1]);
-    result.push_back(solution.x[y_start + i + 1]);
+  for (i = 0; i < N-1; i++)
+  {
+    output.push_back(solution.x[x_start + i + 1]);
+    output.push_back(solution.x[y_start + i + 1]);
   }
 
-  return result;
+  return output;
 }
