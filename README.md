@@ -127,9 +127,9 @@ The horizon should be of a few seconds, not more, because beyond that the enviro
 
 In order to choose the right length I had to take into consideration that the longer the horizon the more computational expensive the control process become.
 This is clear if we look at the equation that defines `T`: `T = N * dt`. 
-Therefore the longer the horizon, given a define `dt`, the more the number of steps increases, meaning that we will have more actuations to compute
+Therefore the longer the horizon, given a define `dt`, the more the number of steps increases, meaning that we will have more actuations to compute.
 
-It was possible to drive aroung the track with an horizon of 1 seconds, but - because it's better to be safe than sorry on the road - I increased it to 1.5 seconds.
+It was possible to drive around the track with an horizon of 1 seconds, but - because it's better to be safe than sorry on the road - I increased it to 1.5 seconds.
 
 #### The number of time steps - `N`
 
@@ -138,7 +138,7 @@ For this reason the output of the optimizer is a vector of length `N*2`: [δ<sub
 
 #### The timestep duration - `dt`
 
-MPC attempts to approximate a continuous function - the reference trajectory - by means of discrete baths between activations.
+MPC attempts to approximate a continuous function - the reference trajectory - by means of discrete paths between activations.
 The first logical value to try was `100 milliseconds` which is equal to the latency of the simulation.
 It all worked out, therefore no other values were tried.
 
@@ -152,7 +152,7 @@ The trajectory is given by the simulator as a set of waypoints from which we nee
 
 Because the waypoints are given in map coordinate system, it was necessary to transform them to vehicle coordinate system.
 
-First I subtracted the all the points from the current position. This means that both the `x` and `y` coordinate will be at `0`. Second I wanted to make `ψ` zero as well, and in order to do that I rotated all of the points.
+First I subtracted all the points from the current position. This means that both the `x` and `y` coordinate will be at `0`. Second I wanted to make `ψ` zero as well, and in order to do that I rotated all of the points.
 
 The math used for doing this is described by the following code.
     
@@ -168,6 +168,7 @@ for(int i = 0; i < num_waypoints; i++)
 
 See line `106` to `117` in `src/main.cpp`
 
+More details on [this video](https://youtu.be/bOQuhpz3YfU?t=4m29s) from Udacity.
 
 #### Fitting a third order polynomial
 
@@ -175,7 +176,7 @@ The function used to fit a `n` order polynomial from a set of `x` and `y` coordi
 
 The function is implemented in `src/main.cpp` from line `47` to line `66`
 
-The third order polynomial was calculated using the above function and then used to calculate the coefficients, the Cross Track Error and the Orientation Error:
+The third order polynomial was calculated using the above function and then used to calculate the polynomial coefficients, the Cross Track Error and the Orientation Error:
 
 ``` C++
 auto coeffs = polyfit(x_veh_eig, y_veh_eig, 3);
@@ -183,7 +184,7 @@ double cte = polyeval(coeffs, 0);
 double epsi = -atan(coeffs[1]);
 ```
 
-Lastly, we call the MPC with the current state and the coefficient of the trajectory that we just calcualated:
+Lastly, we call the MPC with the current state and the coefficients of the trajectory that we just calcualated:
 
 ``` C++
 vector<double> mpc_output = mpc.Solve(state, coeffs);
