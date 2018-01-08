@@ -89,7 +89,7 @@ We can solve this by setting lower and upper bounds for the actuators.
  #### Errors and a new vehicle state
  
  A controller activates the vehicle to follow the reference trajectory within a set of design requirements.
- One of the requirements is to minimize to errors:
+ One of the requirements is to minimize 2 errors:
  
  * The distance of the vehicle from the desired trajectory
  * The difference of the vehicle orientation and the trajectory orientation
