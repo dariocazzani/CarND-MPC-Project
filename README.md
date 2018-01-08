@@ -123,7 +123,7 @@ The prediction horizon - _T_ - is the duration over which future predictions are
 
 #### The horizon - `T`
 
-The horizon should be of a few seconds, not more, because beyond that the environment changes to much.
+The horizon should be of a few seconds, not more, because beyond that the environment changes too much.
 
 In order to choose the right length I had to take into consideration that the longer the horizon the more computational expensive the control process become.
 This is clear if we look at the equation that defines `T`: `T = N * dt`. 
