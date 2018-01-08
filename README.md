@@ -69,7 +69,7 @@ The state of the vehicle is defined by 4 variables: `[x, y, ψ, v]`
  * `ψ,` defines the orientation of the vehicle
  * `v` defines the velocity
  
- The actuators with which we act on the state of the vehicle are
+ The actuators with which we act on the state of the vehicle are acceleration and steering angle.
  
  #### Actuators and nonholomonic model
  
