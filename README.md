@@ -105,8 +105,37 @@ We can capture how the `CTE` changes over time with the following equation:
 
  ![cte equation](images/cte_equation.png)
  
-**The orientation error** is calculated as the difference between the actual orientation and the tangential angle of the trajectory evaluated at `x_t`
+**The orientation error** is calculated as the difference between the actual orientation and the tangential angle of the trajectory evaluated at `x<sub>t</sub>`
 
 The update rule is practically the same as for `ψ`
 
  ![epsi_equation](images/epsi_equation.png)
+ 
+ 
+## Timestep Length and Elapsed Duration (N & dt)
+ 
+The first parameters that have to be chosen were `N` and `dt`.
+
+`N` defines the number of steps in the _prediction horizon_ and `dt` is how much time elapses between actuations.
+The prediction horizon - _T_ - is the duration over which future predictions are made.
+
+#### The horizon - `T`
+
+The horizon should be of a few seconds, not more, because beyond that the environment changes to much.
+
+In order to choose the right length I had to take into consideration that the longer the horizon the more computational expensive the control process become.
+This is clear if we look at the equation that defines `T`: `T = N * dt`. 
+Therefore the longer the horizon, given a define `dt`, the more the number of steps increases, meaning that we will have more actuations to compute
+
+It was possible to drive aroung the track with an horizon of 1 seconds, but - because it's better to be safe than sorry on the road - I increased it to 1.5 seconds.
+
+#### The number of time steps - `N`
+
+The goal of the MPC is to optimize the control inputs `[δ, a]` over time.
+For this reason the output of the optimizer is a vector of length `N*2`: [δ<sub>1</sub>, a<sub>1</sub>, ..., δ<sub>N-1</sub>, a<sub>N-1</sub>]
+
+#### The timestep duration - `dt`
+
+MPC attempts to approximate a continuous function - the reference trajectory - by means of discrete baths between activations.
+The first logical value to try was `100 milliseconds` which is equal to the latency of the simulation.
+It all worked out, therefore no other values were tried.
