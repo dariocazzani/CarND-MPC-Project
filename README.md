@@ -83,6 +83,9 @@ We can solve this by setting lower and upper bounds for the actuators.
  
  ![Kinematic model](images/kinematic_model_equations.png)
  
+ _Lf_ is a multiplicative factor that takes into account the distance from the front of the vehicle and its center of the gravity.
+ In other words: the larget the vehicle the slower it can turn
+ 
  #### Errors and a new vehicle state
  
  A controller activates the vehicle to follow the reference trajectory within a set of design requirements.
@@ -97,6 +100,13 @@ We can capture how these errors change over time by deriving a new kinematic mod
 
 #### Cross Track Error and Orientation Error
 
-The Cross Track Error - `CTE` - is the distance of the car with respect to the center of the road (approximated by a first order polynomial).
+**The Cross Track Error** - `CTE` - is the distance of the car with respect to the center of the road (approximated by a first order polynomial).
 We can capture how the `CTE` changes over time with the following equation:
 
+ ![cte equation](images/cte_equation.png)
+ 
+**The orientation error** is calculated as the difference between the actual orientation and the tangential angle of the trajectory evaluated at `x_t`
+
+The update rule is practically the same as for `ψ`
+
+ ![epsi_equation](images/epsi_equation.png)
