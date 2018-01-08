@@ -100,7 +100,7 @@ We can capture how these errors change over time by deriving a new kinematic mod
 
 #### Cross Track Error and Orientation Error
 
-**The Cross Track Error** - `CTE` - is the distance of the car with respect to the center of the road (approximated by a first order polynomial).
+**The Cross Track Error** - `CTE` - is the distance of the car from the center of the road (approximated by a first order polynomial).
 We can capture how the `CTE` changes over time with the following equation:
 
  ![cte equation](images/cte_equation.png)
