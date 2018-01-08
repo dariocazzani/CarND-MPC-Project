@@ -115,6 +115,7 @@ The update rule is practically the same as for `ψ`
 ## Timestep Length and Elapsed Duration (N & dt)
  
 The first parameters that have to be chosen were `N` and `dt`.
+See `src/MPC.h` where these parameters are set.
 
 `N` defines the number of steps in the _prediction horizon_ and `dt` is how much time elapses between actuations.
 The prediction horizon - _T_ - is the duration over which future predictions are made.
