@@ -105,7 +105,7 @@ We can capture how the `CTE` changes over time with the following equation:
 
  ![cte equation](images/cte_equation.png)
  
-**The orientation error** is calculated as the difference between the actual orientation and the tangential angle of the trajectory evaluated at `x<sub>t</sub>`
+**The orientation error** is calculated as the difference between the actual orientation and the tangential angle of the trajectory evaluated at x<sub>t</sub>
 
 The update rule is practically the same as for `ψ`
 
