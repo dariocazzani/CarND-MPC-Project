@@ -214,4 +214,4 @@ fg[0] += 1500*CppAD::pow(vars[delta_start + t] * vars[v_start+t], 2);
 
 ## Video Demo
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/lZ1jo3QvKMg/0.jpg)](https://youtu.be/lZ1jo3QvKMg)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/_5p5SAEyYYo/0.jpg)](https://youtu.be/_5p5SAEyYYo)
