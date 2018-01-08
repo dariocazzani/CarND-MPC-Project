@@ -59,15 +59,44 @@ For this project I have used a Kinematic Model. Kinematic Models are simplificat
 This will reduce the accuracy but will make the project more tractable.
 It is important to notice also that we are not given information about tire forces and mass for this project.
 
-The model needs to capture how the state of the vehicle evolves over time and how to operate on the actuators in order to change the state according to a desired trajectory.
+The model needs to capture how the state of the vehicle evolves over time and how to operate on the actuators in order to change the state according to a desired trajectory (approximated by a third order polynomial).
 
-The state of the vehicle is defined by 4 variables: `[x, y, psi, v]`
+#### The vehicle state
+
+The state of the vehicle is defined by 4 variables: `[x, y, ψ, v]`
 
  * `x` and `y` define where the vehicle is located
- * `psi` defines the orientation of the vehicle
+ * `ψ,` defines the orientation of the vehicle
  * `v` defines the velocity
  
  The actuators with which we act on the state of the vehicle are
  
- * `a` which defines how much acceleration we want to apply to the vehicle. It could be forward or backward (braking), that is why it ranges between `-1` and `1`
- * `delta` is the steering angle and is constrained between `-25` and `25` degrees
+ #### Actuators and nonholomonic model
+ 
+In a real vehicle the actuators are limited by the design of the vehicle and fundamental physics.
+We can solve this by setting lower and upper bounds for the actuators.
+
+* `a` which defines how much acceleration we want to apply to the vehicle. It could be forward or backward (braking), that is why it ranges between `-1` and `1`
+ * `δ` is the steering angle and is constrained between `-25` and `25` degrees
+ 
+ #### The Global Kinematic Model Equations
+ 
+ ![Kinematic model](images/kinematic_model_equations.png)
+ 
+ #### Errors and a new vehicle state
+ 
+ A controller activates the vehicle to follow the reference trajectory within a set of design requirements.
+ One of the requirements is to minimize to errors:
+ 
+ * The distance of the vehicle from the desired trajectory
+ * The difference of the vehicle orientation and the trajectory orientation
+ 
+ We can minimize these errors by predicting the vehicle's actual path and then adjusting the control inputs to minimize the differences between the predictions and the reference.
+ 
+We can capture how these errors change over time by deriving a new kinematic model and a new state vector: `[x, y, ψ, v, cte, eψ]`
+
+#### Cross Track Error and Orientation Error
+
+The Cross Track Error - `CTE` - is the distance of the car with respect to the center of the road (approximated by a first order polynomial).
+We can capture how the `CTE` changes over time with the following equation:
+
