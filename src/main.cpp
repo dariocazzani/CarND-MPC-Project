@@ -83,7 +83,8 @@ int main() {
       if (s != "") {
         auto j = json::parse(s);
         string event = j[0].get<string>();
-        if (event == "telemetry") {
+        if (event == "telemetry")
+        {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
@@ -103,17 +104,16 @@ int main() {
           * First: convert to the vehicle coordinate system
           */
           const int num_waypoints = ptsx.size();
-          const double cospsi = cos(-psi);
-          const double sinpsi = sin(-psi);
 
           vector<double> x_veh;
           vector<double> y_veh;
 
-          for(int i = 0; i < num_waypoints; i++) {
+          for(int i = 0; i < num_waypoints; i++)
+          {
             const double dx = ptsx[i] - px;
             const double dy = ptsy[i] - py;
-            x_veh.push_back(dx * cospsi - dy * sinpsi);
-            y_veh.push_back(dy * cospsi + dx * sinpsi);
+            x_veh.push_back(dx * cos(-psi) - dy * sin(-psi));
+            y_veh.push_back(dy * cos(-psi) + dx * sin(-psi));
           }
 
 
@@ -209,7 +209,8 @@ int main() {
           this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
-      } else {
+      } else
+      {
         // Manual driving
         std::string msg = "42[\"manual\",{}]";
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
