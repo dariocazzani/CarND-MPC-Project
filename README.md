@@ -194,7 +194,7 @@ vector<double> mpc_output = mpc.Solve(state, coeffs);
 In order to account for a latency of 100 milliseconds I decided to keep the timestep duration equal to the latency.
 Because the updates of the vehicle's state - _see kinematic model equations_ depend only on the previous timestep I decided to:
 * keep the timestep duration - `dt` see sections above - equal to the latency.
-* apply the actuations on more step later. See `src/main.cpp` lines `120` to `124`
+* apply the actuations one extra step later. See `src/main.cpp` lines `120` to `124`
 
 ## Tuning the weights in the cost function
 
