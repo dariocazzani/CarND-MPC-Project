@@ -115,6 +115,7 @@ The update rule is practically the same as for `ψ`
 ## Timestep Length and Elapsed Duration (N & dt)
  
 The first parameters that have to be chosen were `N` and `dt`.
+
 See `src/MPC.h` where these parameters are set.
 
 `N` defines the number of steps in the _prediction horizon_ and `dt` is how much time elapses between actuations.
@@ -140,3 +141,56 @@ For this reason the output of the optimizer is a vector of length `N*2`: [δ<sub
 MPC attempts to approximate a continuous function - the reference trajectory - by means of discrete baths between activations.
 The first logical value to try was `100 milliseconds` which is equal to the latency of the simulation.
 It all worked out, therefore no other values were tried.
+
+
+## Polynomial Fitting and MPC Preprocessing
+
+Typically the path planning system passes the reference trajectory to the control system - `MPC` in our case - as a polynomial.
+The trajectory is given by the simulator as a set of waypoints from which we need to infer a trajectory described by a third order polynomial
+
+#### Preprocessing the waypoints
+
+Because the waypoints are given in map coordinate system, it was necessary to transform them to vehicle coordinate system.
+
+First I subtracted the all the points from the current position. This means that both the `x` and `y` coordinate will be at `0`. Second I wanted to make `ψ` zero as well, and in order to do that I rotated all of the points.
+
+The math used for doing this is described by the following code.
+    
+``` C++
+for(int i = 0; i < num_waypoints; i++) 
+{
+   const double dx = ptsx[i] - px;
+   const double dy = ptsy[i] - py;
+   x_veh.push_back(dx * cos(-psi) - dy * sin(-psi));
+   y_veh.push_back(dy * cos(-psi) + dx * sin(-psi));
+}
+```
+
+See line `106` to `117` in `src/main.cpp`
+
+
+#### Fitting a third order polynomial
+
+The function used to fit a `n` order polynomial from a set of `x` and `y` coordinates is adatped from thi [here](https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716)
+
+The function is implemented in `src/main.cpp` from line `47` to line `66`
+
+The third order polynomial was calculated using the above function and then used to calculate the coefficients, the Cross Track Error and the Orientation Error:
+
+``` C++
+auto coeffs = polyfit(x_veh_eig, y_veh_eig, 3);
+double cte = polyeval(coeffs, 0);  
+double epsi = -atan(coeffs[1]);
+```
+
+Lastly, we call the MPC with the current state and the coefficient of the trajectory that we just calcualated:
+
+``` C++
+vector<double> mpc_output = mpc.Solve(state, coeffs);
+```
+
+## Model Predictive Control with Latency
+
+## Tuning the weights in the cost function
+
+
