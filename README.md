@@ -191,6 +191,23 @@ vector<double> mpc_output = mpc.Solve(state, coeffs);
 
 ## Model Predictive Control with Latency
 
+In order to account for a latency of 100 milliseconds I decided to keep the timestep duration equal to the latency.
+Because the updates of the vehicle's state - _see kinematic model equations_ depend only on the previous timestep I decided to:
+* keep the timestep duration - `dt` see sections above - equal to the latency.
+* apply the actuations on more step later. See `src/main.cpp` lines `120` to `124`
+
 ## Tuning the weights in the cost function
 
+Quite some time was dedicated to tune the weights in the cost function.
+All the weights are defined in `src/MPC.cpp` from line `36` to line `42`.
 
+A few of comments:
+
+* I set a very high cost for applying a high value of `δ` - steering -. This seemed to avoid sudden turns in the vehicle and a caotic way of driving.
+* Because it is better to be safe than sorry when driving - will never say this enough - I decided to make sure that the car would slow down during curves.
+As suggested here: https://discussions.udacity.com/t/mpc-cost-paramter-tuning-question/354670/6 as velocity increase, there is lot of change in `δ`. 
+Adding this additional term in the cost helped a lot:
+
+``` C++
+fg[0] += 1500*CppAD::pow(vars[delta_start + t] * vars[v_start+t], 2);
+```
